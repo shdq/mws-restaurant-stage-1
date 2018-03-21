@@ -1,6 +1,7 @@
 let restaurant;
 var map;
 
+const path = '/img/';
 /**
  * Initialize Google map, called from HTML.
  */
@@ -16,6 +17,8 @@ window.initMap = () => {
       });
       fillBreadcrumb();
       DBHelper.mapMarkerForRestaurant(self.restaurant, self.map);
+      
+      DBHelper.removeFocusFromMap(); 
     }
   });
 }
@@ -58,6 +61,12 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
   const image = document.getElementById('restaurant-img');
   image.className = 'restaurant-img'
   image.src = DBHelper.imageUrlForRestaurant(restaurant);
+  image.srcset = `${DBHelper.imageUrlForRestaurant(restaurant)} 800w, ${path}${restaurant.id}-600w.jpg 600w, ${path}${restaurant.id}-400w.jpg 400w`;
+  image.setAttribute('sizes', '(max-width: 400px) 400px, (min-width: 401px) and (max-width: 600px) 600px, (min-width: 601px) and (max-width: 767px) 800px,(min-width: 768px) and (max-width: 890px) 400px,(min-width: 891px) and (max-width: 1290px) 600px, 800px');
+
+  
+  image.alt = restaurant.name;
+  image.title = restaurant.name;
 
   const cuisine = document.getElementById('restaurant-cuisine');
   cuisine.innerHTML = restaurant.cuisine_type;
@@ -161,3 +170,4 @@ getParameterByName = (name, url) => {
     return '';
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
 }
+

@@ -2,7 +2,6 @@
  * Common database helper functions.
  */
 class DBHelper {
-
   /**
    * Database URL.
    * Change this to restaurants.json file location on your server.
@@ -150,7 +149,8 @@ class DBHelper {
    * Restaurant image URL.
    */
   static imageUrlForRestaurant(restaurant) {
-    return (`/img/${restaurant.photograph}`);
+    const path = '/img/';
+    return (`${path}${restaurant.photograph}`);
   }
 
   /**
@@ -165,6 +165,19 @@ class DBHelper {
       animation: google.maps.Animation.DROP}
     );
     return marker;
+  }
+
+  static removeFocusFromMap() {
+    // add title to iframe and remove focus from google map
+    window.setTimeout(() => { 
+    document.querySelectorAll('#map iframe').forEach((item) => {
+      item.setAttribute('title', 'Google map');
+    });
+      let map = document.getElementById('map');
+      map.querySelectorAll('button, [href], [tabindex]:not([tabindex="-1"]), iframe').forEach((item) => {
+        item.setAttribute('tabindex', '-1');
+      });
+    }, 1000);
   }
 
 }

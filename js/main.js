@@ -4,6 +4,8 @@ let restaurants,
 var map
 var markers = []
 
+const path = '/img/';
+
 /**
  * Fetch neighborhoods and cuisines as soon as the page is loaded.
  */
@@ -81,6 +83,9 @@ window.initMap = () => {
     scrollwheel: false
   });
   updateRestaurants();
+
+  DBHelper.removeFocusFromMap();
+
 }
 
 /**
@@ -102,6 +107,7 @@ updateRestaurants = () => {
     } else {
       resetRestaurants(restaurants);
       fillRestaurantsHTML();
+      DBHelper.removeFocusFromMap();
     }
   })
 }
@@ -141,6 +147,11 @@ createRestaurantHTML = (restaurant) => {
   const image = document.createElement('img');
   image.className = 'restaurant-img';
   image.src = DBHelper.imageUrlForRestaurant(restaurant);
+  image.alt = restaurant.name;
+  image.title = restaurant.name;
+  
+  image.srcset = `${path}${restaurant.id}-600w.jpg 2x, ${path}${restaurant.id}-400w.jpg 1x`;
+
   li.append(image);
 
   const name = document.createElement('h1');
@@ -175,4 +186,8 @@ addMarkersToMap = (restaurants = self.restaurants) => {
     });
     self.markers.push(marker);
   });
+}
+
+window.onresize = () => {
+  DBHelper.removeFocusFromMap();
 }
