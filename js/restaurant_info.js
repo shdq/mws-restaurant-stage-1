@@ -2,6 +2,17 @@ let restaurant;
 var map;
 
 const path = '/img/';
+
+document.addEventListener('DOMContentLoaded', (event) => {
+  fetchRestaurantFromURL((error, restaurant) => {
+    if (error) { // Got an error!
+      console.error(error);
+    } else {
+      fillBreadcrumb();
+    }
+  });
+});
+
 /**
  * Initialize Google map, called from HTML.
  */
@@ -15,10 +26,8 @@ window.initMap = () => {
         center: restaurant.latlng,
         scrollwheel: false
       });
-      fillBreadcrumb();
       DBHelper.mapMarkerForRestaurant(self.restaurant, self.map);
-      
-      DBHelper.removeFocusFromMap(); 
+      DBHelper.removeFocusFromMap();
     }
   });
 }
