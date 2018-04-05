@@ -39,11 +39,10 @@ article, aside, canvas, details, figcaption, figure, footer, header, hgroup, men
 #footer {
   background-color: #444;
   color: #e7e7e7;
-  font-size: 8pt;
+  font-size: 12pt;
   letter-spacing: 1px;
   padding: 25px;
   text-align: center;
-  text-transform: uppercase;
 }
 /* ====================== Navigation ====================== */
 nav {
@@ -119,7 +118,7 @@ nav h1 a {
 .filter-options select {
   background-color: white;
   border: 1px solid #fff;
-  font-size: 11pt;
+  font-size: 12pt;
   height: 35px;
   letter-spacing: 0;
   margin: 10px 5px;
@@ -174,19 +173,18 @@ nav h1 a {
 }
 #restaurants-list p {
   margin: 0;
-  font-size: 11pt;
+  font-size: 12pt;
 }
 #restaurants-list li a {
   background-color: #965d01;
   border-bottom: 3px solid #eee;
   color: #fff;
   display: inline-block;
-  font-size: 10pt;
+  font-size: 12pt;
   margin: 15px 0 0;
   padding: 8px 30px 10px;
   text-align: center;
   text-decoration: none;
-  text-transform: uppercase;
 }
 
 /* ====================== Restaurant Details ====================== */
