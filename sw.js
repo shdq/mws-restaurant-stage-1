@@ -5,7 +5,6 @@ const urlsToCache = [
   '/js/main.js',
   '/js/restaurant_info.js',
   '/js/dbhelper.js',
-  '/data/restaurants.json'
 ];
 
 // Listen for install event, set callback
