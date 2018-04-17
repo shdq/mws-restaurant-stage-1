@@ -1,6 +1,8 @@
 # Restaurant Reviews App
-<img src="https://cherniaev.com/udacity/Google-Dev-EMEA-Badge.png" height="250">
-### Google Developer Nanodegree Scholarship. Mobile Web Specialist Certification Course
+<img src="https://cherniaev.com/udacity/Google-Dev-EMEA-Badge.png" height="250" align="right">
+
+####Google Developer Nanodegree Scholarship
+####Mobile Web Specialist Certification Course
 
 ## How to run the app
 Clone project into new directory:
