@@ -5,8 +5,8 @@ const StyleExtHtmlWebpackPlugin = require('style-ext-html-webpack-plugin');
 
 module.exports = {
   entry: {
-    app: './src/js/main.js',
     dbhelper: './src/js/dbhelper.js',
+    app: './src/js/main.js',
     restaurant: './src/js/restaurant_info.js',
   }, 
   output: {
@@ -42,13 +42,13 @@ module.exports = {
     new HtmlWebpackPlugin({
       hash: true,
       template: './src/index.html',
-      chunks: ['app', 'dbhelper'],
+      chunks: ['dbhelper', 'app'],
       filename: 'index.html' //relative to root of the application
   }),
   new HtmlWebpackPlugin({
       hash: true,
       template: './src/restaurant.html',
-      chunks: ['restaurant', 'dbhelper'],
+      chunks: ['dbhelper', 'restaurant'],
       filename: 'restaurant.html' 
   }),
   new ExtractTextPlugin("./css/styles.css"),
