@@ -1,6 +1,6 @@
 import DBHelper from './dbhelper';
 let restaurant;
-var map;
+let map;
 
 const path = '/img/';
 
@@ -13,27 +13,49 @@ if ('serviceWorker' in navigator) {
   .catch(error => console.log('Service worker registration failed, error:', error));
 }
 
+/**
+ * For offline: fetching in offline mode
+ */
 document.addEventListener('DOMContentLoaded', (event) => {
-  fetchRestaurantFromURL((error, restaurant) => {
-    if (error) { // Got an error!
-      console.error(error);
-    } else {
-      fillBreadcrumb();
-    }
-  });
+  //if we are offline fetching the restaurant
+  if(!navigator.onLine && !self.restaurant) {
+    fetchRestaurantFromURL((error, restaurant) => {
+      if (error) { // Got an error!
+        console.error(error);
+      } else {
+        console.log('We are offline');
+      }
+    });
+  }
 });
+
+window.addEventListener('offline', function(e) { console.log('offline'); });
+
+window.addEventListener('online', function(e) { console.log('online'); });
 
 /**
  * Initialize Google map, called from HTML.
  */
 window.initMap = () => {
-  self.map = new google.maps.Map(document.getElementById('map'), {
-    zoom: 16,
-    center: self.restaurant.latlng,
-    scrollwheel: false
+  //if we are online fetching the restaurant
+  if(navigator.onLine && !self.restaurant) {
+  fetchRestaurantFromURL((error, restaurant) => {
+    if (error) { // Got an error!
+      console.error(error);
+    } else {
+      console.log('We are online');
+      self.map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 16,
+        center: restaurant.latlng,
+        disableDefaultUI: true,
+        zoomControl: true,
+        scrollwheel: false
+      });
+      DBHelper.mapMarkerForRestaurant(self.restaurant, self.map);
+      DBHelper.removeFocusFromMap();
+    }
   });
-  DBHelper.mapMarkerForRestaurant(self.restaurant, self.map);
-  DBHelper.removeFocusFromMap();
+  }
 }
 
 /**
@@ -55,8 +77,9 @@ const fetchRestaurantFromURL = (callback) => {
         console.error(error);
         return;
       }
+      fillBreadcrumb();
       fillRestaurantHTML();
-      callback(null, restaurant)
+      callback(null, restaurant);
     });
   }
 }
