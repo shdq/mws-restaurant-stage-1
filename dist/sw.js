@@ -1,4 +1,4 @@
-importScripts("precache-manifest.32ae23823f528a4954c2f81394b2f83c.js", "workbox-v3.4.1/workbox-sw.js");
+importScripts("precache-manifest.2ee9f115e1b8a6f4babe1a14f4418cf6.js", "workbox-v3.4.1/workbox-sw.js");
 workbox.setConfig({modulePathPrefix: "workbox-v3.4.1"});
 let appCache = 'mws-restaurant-app-';
 let urlsToCache = ['/'];
@@ -74,4 +74,23 @@ self.addEventListener('activate', function(event) {
         )
       })
     );
+});
+
+function persistLocalChanges() {
+    console.log('persistLocalChanges');
+    return Promise.resolve();
+};
+
+// background sync
+self.addEventListener('sync', event => {
+  if (event.tag === 'persistReviewToIDB') {
+    event.waitUntil(persistLocalChanges()
+      .then(() => {
+        self.registration.showNotification("All reviews synced to server");
+      })
+      .catch(() => {
+        console.log("Error syncing reviews to server");
+      })
+    );
+  }
 });
