@@ -33,17 +33,8 @@ window.addEventListener('offline', function(e) { console.log('offline'); });
 
 window.addEventListener('online', function(e) {
   console.log('online');
-
   // sync reviews
   DBHelper.getOfflineReviewsAndClearIDB();
-  // remover offline-review class and change time to "JUST ADDED" and maybe show notification that synced
-  const listOffline = document.getElementsByClassName('offline-review');
-  console.log({listOffline});
-  if(listOffline.length != 0) {
-    for(let i = 0; i < listOffline.length; i++) {
-      listOffline[i].className = "";
-    }
-  }
   // sync favorites
   DBHelper.getOfflineFavsAndClearIDB();
 });
@@ -262,7 +253,8 @@ const createRestaurantHTML = (restaurant) => {
   starIcon.dataset.feather = 'star';
   fav.append(starIcon);
   fav.href = '#';
-  if(restaurant.is_favorite === 'false') {
+  // inconsistence of the API with types of is_favorite, so double check
+  if(restaurant.is_favorite === 'false' || restaurant.is_favorite === false) {
     fav.className = 'favorite';
   } else {
     fav.className = 'favorite favorited';
@@ -273,13 +265,13 @@ const createRestaurantHTML = (restaurant) => {
   fav.addEventListener('click', function(e){
     e.preventDefault();
     if(restaurant.is_favorite === 'false') {
-      this.className += ' favorited'; 
+      fav.className += ' favorited'; 
       DBHelper.addToFavorites(restaurant.id, restaurant.is_favorite);
       DBHelper.favRestauraurantInIDB(restaurant.id, restaurant.is_favorite);
       restaurant.is_favorite = 'true';
       return;
     }
-    this.className = this.className.replace(" favorited", "");
+    fav.className = fav.className.replace(" favorited", "");
     DBHelper.addToFavorites(restaurant.id, restaurant.is_favorite);
     DBHelper.favRestauraurantInIDB(restaurant.id, restaurant.is_favorite);
     restaurant.is_favorite = 'false';

@@ -179,7 +179,8 @@ const fillRestaurantHTML = (restaurant = self.restaurant) => {
   fav.append(starIcon);
   fav.href = '#';
   fav.title = 'Favorite';
-  if(restaurant.is_favorite === 'false') {
+  // inconsistence of the API with types of is_favorite, so double check
+  if(restaurant.is_favorite === 'false' || restaurant.is_favorite === false) {
     fav.className = 'favorite';
   } else {
     fav.className = 'favorite favorited';
@@ -189,13 +190,13 @@ const fillRestaurantHTML = (restaurant = self.restaurant) => {
   fav.addEventListener('click', function(e){
     e.preventDefault();
     if(restaurant.is_favorite === 'false') {
-      this.className += ' favorited'; 
+      fav.className += ' favorited'; 
       DBHelper.addToFavorites(restaurant.id, restaurant.is_favorite);
       DBHelper.favRestauraurantInIDB(restaurant.id, restaurant.is_favorite);
       restaurant.is_favorite = 'true';
       return;
     }
-    this.className = this.className.replace(" favorited", "");
+    fav.className = fav.className.replace(" favorited", "");
     DBHelper.addToFavorites(restaurant.id, restaurant.is_favorite);
     DBHelper.favRestauraurantInIDB(restaurant.id, restaurant.is_favorite);
     restaurant.is_favorite = 'false';
