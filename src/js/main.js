@@ -1,4 +1,5 @@
 // const images = require.context('../img', true);
+const feather = require('feather-icons');
 import '../css/styles.css';
 
 import DBHelper from './dbhelper';
@@ -14,11 +15,38 @@ const path = '/img/';
 /**
  * Registering service worker for offline features
  */
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && 'SyncManager' in window) {
   navigator.serviceWorker.register('./sw.js')
-  .then(registration => console.log('Registration successful, scope is:', registration.scope))
+  .then(registration => navigator.serviceWorker.ready)
+  .then(registration => {
+    Notification.requestPermission();
+    console.log('Registration successful, scope is:', registration.scope)
+  })
   .catch(error => console.log('Service worker registration failed, error:', error));
 }
+
+
+/**
+ * Check for online status and make sync with the server
+ */
+window.addEventListener('offline', function(e) { console.log('offline'); });
+
+window.addEventListener('online', function(e) {
+  console.log('online');
+
+  // sync reviews
+  DBHelper.getOfflineReviewsAndClearIDB();
+  // remover offline-review class and change time to "JUST ADDED" and maybe show notification that synced
+  const listOffline = document.getElementsByClassName('offline-review');
+  console.log({listOffline});
+  if(listOffline.length != 0) {
+    for(let i = 0; i < listOffline.length; i++) {
+      listOffline[i].className = "";
+    }
+  }
+  // sync favorites
+  DBHelper.getOfflineFavsAndClearIDB();
+});
 
 /**
  * Fetch neighborhoods and cuisines as soon as the page is loaded.
@@ -88,9 +116,18 @@ const fillCuisinesHTML = (cuisines = self.cuisines) => {
 }
 
 /**
- * Initialize Google map, called from HTML.
+ * Initialize Google map on click.
  */
-window.initMap = () => {
+window.onload = () => {
+  let map = document.getElementById('map');
+  map.addEventListener('click', () => {
+    let preloadedScript = document.createElement("script");
+    preloadedScript.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyA2lu4ATHHFARA9-2cDDdn2R_lXhM8-ybI&callback=init";
+    document.body.appendChild(preloadedScript);
+  });
+};
+
+window.init = () => {
   let loc = {
     lat: 40.722216,
     lng: -73.987501
@@ -103,7 +140,6 @@ window.initMap = () => {
     scrollwheel: false
   });
   addMarkersToMap();
-
   DBHelper.removeFocusFromMap();
 }
 
@@ -190,7 +226,7 @@ const fillRestaurantsHTML = (restaurants = self.restaurants) => {
   targets.forEach(target => {
     io.observe(target);
   });
-  
+  feather.replace();
   addMarkersToMap();
 }
 
@@ -199,6 +235,7 @@ const fillRestaurantsHTML = (restaurants = self.restaurants) => {
  */
 const createRestaurantHTML = (restaurant) => {
 
+  console.log({restaurant});
   const li = document.createElement('li');
 
   const picture = document.createElement('picture');
@@ -220,6 +257,35 @@ const createRestaurantHTML = (restaurant) => {
 
   li.append(picture);
 
+  const fav = document.createElement('a');
+  const starIcon = document.createElement('i');
+  starIcon.dataset.feather = 'star';
+  fav.append(starIcon);
+  fav.href = '#';
+  if(restaurant.is_favorite === 'false') {
+    fav.className = 'favorite';
+  } else {
+    fav.className = 'favorite favorited';
+  }
+  
+  fav.title = 'Favorite';
+  fav.setAttribute('aria-label', `Add ${restaurant.name} to favorites`);
+  fav.addEventListener('click', function(e){
+    e.preventDefault();
+    if(restaurant.is_favorite === 'false') {
+      this.className += ' favorited'; 
+      DBHelper.addToFavorites(restaurant.id, restaurant.is_favorite);
+      DBHelper.favRestauraurantInIDB(restaurant.id, restaurant.is_favorite);
+      restaurant.is_favorite = 'true';
+      return;
+    }
+    this.className = this.className.replace(" favorited", "");
+    DBHelper.addToFavorites(restaurant.id, restaurant.is_favorite);
+    DBHelper.favRestauraurantInIDB(restaurant.id, restaurant.is_favorite);
+    restaurant.is_favorite = 'false';
+  });
+  li.append(fav);
+
   const name = document.createElement('h2');
   name.innerHTML = restaurant.name;
   li.append(name);
@@ -233,9 +299,10 @@ const createRestaurantHTML = (restaurant) => {
   li.append(address);
 
   const more = document.createElement('a');
-  more.innerHTML = 'View Details';
+  more.innerHTML = 'View details';
   more.href = DBHelper.urlForRestaurant(restaurant);
   more.setAttribute('aria-label', restaurant.name);
+  more.className = 'button';
   li.append(more)
 
   return li
@@ -245,13 +312,15 @@ const createRestaurantHTML = (restaurant) => {
  * Add markers for current restaurants to the map.
  */
 const addMarkersToMap = (restaurants = self.restaurants) => {
-  for (const restaurant in restaurants) {
-    // Add marker to the map
-    const marker = DBHelper.mapMarkerForRestaurant(restaurants[restaurant], self.map);
-    google.maps.event.addListener(marker, 'click', () => {
-      window.location.href = marker.url
-    });
-    self.markers.push(marker);
+  if (typeof google === 'object' && typeof google.maps === 'object') {
+    for (const restaurant in restaurants) {
+      // Add marker to the map
+      const marker = DBHelper.mapMarkerForRestaurant(restaurants[restaurant], self.map);
+      google.maps.event.addListener(marker, 'click', () => {
+        window.location.href = marker.url
+      });
+      self.markers.push(marker);
+    }
   }
 }
 

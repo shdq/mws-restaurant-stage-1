@@ -10,7 +10,7 @@
    */
   static get DATABASE_URL() {
     const port = 1337 // Change this to your server port
-    return `http://localhost:${port}/restaurants`;
+    return `http://localhost:${port}`;
   }
 
   /**
@@ -18,10 +18,59 @@
    */
   static idbPromise() {
     const dbPromise = idb.open('restaurants-db', 1, upgradeDB => {  
-      const restaurantsStore = upgradeDB.createObjectStore('restaurants', { keyPath: 'id'});
-      restaurantsStore.createIndex('updated', 'updatedAt');
+
+      switch (upgradeDB.oldVersion) {
+        case 0:
+          const restaurantsStore = upgradeDB.createObjectStore('restaurants', { keyPath: 'id'});
+          restaurantsStore.createIndex('updated', 'updatedAt');
+        case 1:
+          const reviewsStore = upgradeDB.createObjectStore('reviews', { keyPath: 'id'});
+          reviewsStore.createIndex('restaurant', 'restaurant_id');
+        case 2:
+          const reviewsOfflineStore = upgradeDB.createObjectStore('offline-reviews', { keyPath: 'updatedAt'});
+          reviewsOfflineStore.createIndex('restaurant', 'restaurant_id');
+        case 3:
+          upgradeDB.createObjectStore('offline-fav', { keyPath: 'restaurant_id'});
+          // favOfflineStore.createIndex('restaurant', 'restaurant_id');
+      }
     });
     return dbPromise;
+  }
+
+  /**
+   * Favorite/unfavorite restaurant in idb
+   */
+  static favRestauraurantInIDB(restaurant_id, is_favorite) {
+    is_favorite === 'true' ? is_favorite = 'false' : is_favorite = 'true';
+    const dbPromise = DBHelper.idbPromise();
+    dbPromise.then(db => {
+      const restaurantsStore = db.transaction('restaurants', 'readwrite').objectStore('restaurants');
+      console.log('id:', restaurant_id);
+      restaurantsStore.get(Number(restaurant_id)).then(restaurant => {
+        if(restaurant) {
+          restaurant.is_favorite = is_favorite;
+          console.log({is_favorite});
+          console.log(typeof is_favorite);
+          console.log('restaurant:', restaurant);
+          console.log('favorited?', restaurant.is_favorite);
+          restaurantsStore.put(restaurant);
+          
+          //if offline store for the sync
+          if(!navigator.onLine) {
+            console.log('Offline: store favs for the future sync');
+            let offlineFav = {
+              restaurant_id: restaurant.id,
+              is_favorite: restaurant.is_favorite
+            }
+            const favOfflineStore = db.transaction('offline-fav', 'readwrite').objectStore('offline-fav');
+            favOfflineStore.put(offlineFav);
+          }
+          console.log('Restaurant is_favorite updated in idb');
+        } else {
+          console.log('No restaurant in idb');
+        }
+      })
+    });
   }
 
   /**
@@ -64,7 +113,7 @@
   static fetchRestaurants(callback) {
     DBHelper.fetchRestaurantsFromIDB((error, restaurants) => {
       if (error) { // Got an error
-        fetch(DBHelper.DATABASE_URL)
+        fetch(`${DBHelper.DATABASE_URL}/restaurants`)
         .then(response => response.json())
         .then((restaurants) => {
           console.log('No cached idb, fetched from Internet');
@@ -100,7 +149,7 @@
   static fetchRestaurantById(id, callback) {
     DBHelper.fetchRestaurantByIdFromIDB(id, (error, restaurant) => {
       if (error) { // Got an error
-        fetch(`${DBHelper.DATABASE_URL}/${id}`)
+        fetch(`${DBHelper.DATABASE_URL}/restaurants/${id}`)
         .then(response => response.json())
         .then((restaurant) => {
           console.log('No cached idb, fetched from Internet');
@@ -111,6 +160,198 @@
         console.log('Fetched from cached idb');
         callback(null, restaurant);
       }
+    });
+  }
+
+  /**
+   * Fetch a reviews by restaurant ID from IDB.
+   */
+  static fetchReviewsByRestaurantIdFromIDB(id, callback) {
+    let offReviews = [];
+    // getting offline reviews if any
+    DBHelper.getOfflineReviews(id, (error, offlineReviews) => {
+      if(error) {
+        console.log(error);
+      } else {
+        offReviews = offlineReviews;
+        console.log('Offline reviews:', offReviews);
+      }
+    });
+
+    const dbPromise = DBHelper.idbPromise();
+    dbPromise.then(db => {
+      const reviewsStore = db.transaction('reviews').objectStore('reviews');
+      console.log('id:', id);
+      let myIndex = reviewsStore.index('restaurant');
+      // double query to idb because of inconsistency of the API (existent reviews with restaurant_id in number just added review returns with restaurant_id in string)
+      myIndex.getAll(Number(id)).then(dbReviews => {
+        console.log({dbReviews});
+        myIndex.getAll(id.toString()).then(newReviews => {
+          console.log({newReviews});
+          if(offReviews.length != 0 | dbReviews.length != 0 || newReviews.length != 0) {
+            let mergeReviews = [];
+            if(dbReviews.length != 0) {
+              dbReviews.forEach(dbReview => {
+                mergeReviews.push(dbReview);
+              })
+            }
+            if(newReviews.length != 0) {
+              newReviews.forEach(newReview => {
+                mergeReviews.push(newReview);
+              })
+            }
+            if(offReviews.length != 0) {
+              offReviews.forEach(offReview => {
+                mergeReviews.push(offReview);
+              })
+            }
+              console.log('Reviews from IDB (new, old, offline) for this restaurant:', mergeReviews);
+              callback(null, mergeReviews);
+            } else {
+              callback('No reviews in idb for this restaurant', null);
+          }
+        })
+      })
+    });
+  }
+
+  /**
+   * Fetch reviews by restaurant ID.
+   */
+  static fetchReviewsByRestaurantId(id, callback) {
+    fetch(`${DBHelper.DATABASE_URL}/reviews/?restaurant_id=${id}`)
+      .then(response => response.json())
+      .then(reviews => {
+        DBHelper.cacheRestaurantReviewsInIDB(reviews);
+        console.log('No reviews in cached idb, reviews fetched from Internet');
+        callback(null, reviews);
+      })
+      .catch(error => {
+        DBHelper.fetchReviewsByRestaurantIdFromIDB(id, (error, cachedReviews) => {
+          if (error) { // Got an error
+            callback('No reviews for this restaurant in db and idb', null)
+          } else {
+            console.log('Reviews for this restaurant fetched from cached idb (with offline reviews if there are exists)', cachedReviews);
+            callback(null, cachedReviews);
+          }
+        });
+      });
+  }
+
+  /**
+   * Cache restaurant reviews in IDB
+   */
+  static cacheRestaurantReviewsInIDB(reviews) {
+    const dbPromise = DBHelper.idbPromise();
+    dbPromise.then(db => {
+      const reviewsStore = db.transaction('reviews', 'readwrite').objectStore('reviews');
+      reviews.forEach(review => reviewsStore.put(review));
+      console.info('Reviews cached in idb');
+    })
+  }
+  /**
+   * Add review in idb for offline sync
+   */
+  static saveReviewToIDBforSync(review) {
+    const dbPromise = DBHelper.idbPromise();
+    dbPromise.then(db => {
+      const reviewsOfflineStore = db.transaction('offline-reviews', 'readwrite').objectStore('offline-reviews');
+      reviewsOfflineStore.put(review);
+    })
+  }
+  /**
+   * Add review in idb for offline sync
+   */
+  static addReviewToServer(review) {
+    fetch(`${DBHelper.DATABASE_URL}/reviews/?restaurant_id=${review.restaurant_id}`, {
+      method: 'POST',
+      body: JSON.stringify(review)
+    })
+    .then(response => {
+      response.json()
+      .then(data => {
+        console.log('Review added to the server:', data);
+        const dbPromise = DBHelper.idbPromise();
+        dbPromise.then(db => {
+          const reviewsOfflineStore = db.transaction('reviews', 'readwrite').objectStore('reviews');
+          reviewsOfflineStore.put(data);
+        })
+      }) 
+    })
+      
+    .catch(error => console.error(`Fetch Error =\n`, error));
+  }
+
+  static getOfflineReviews(id, callback) {
+    const dbPromise = DBHelper.idbPromise();
+    dbPromise.then(db => {
+      const offlineReviewsStore = db.transaction('offline-reviews', 'readwrite').objectStore('offline-reviews').index('restaurant');
+      offlineReviewsStore.getAll(Number(id)).then(offlineReviews => {
+        if(offlineReviews.length != 0) {
+          callback(null, offlineReviews);
+        } else {
+          callback('No reviews for sync in offline store', null);
+        }
+      })
+    });
+  }
+  /**
+   * Get reviews from idb that have added dyring offline mode
+   */
+  static getOfflineReviewsAndClearIDB() {
+    const dbPromise = DBHelper.idbPromise();
+    dbPromise.then(db => {
+      const offlineReviewsStore = db.transaction('offline-reviews', 'readwrite').objectStore('offline-reviews');
+      offlineReviewsStore.getAll().then(offlineReviews => {
+        if(offlineReviews.length != 0) {
+          DBHelper.fetchOfflineReviewsToServer(offlineReviews);
+          offlineReviewsStore.clear();
+          console.log('All offline reviews fetched to server, storage cleared');
+          if (Notification.permission === "granted") {
+            let notification = new Notification("All data has synced to server");
+          }
+        } else {
+          console.log('No reviews for sync in offline store');
+        }
+      })
+    });
+  }
+
+  static fetchOfflineReviewsToServer(offlineReviews) {
+    offlineReviews.forEach(offlineReview => {
+        DBHelper.addReviewToServer(offlineReview);
+    });
+  }
+
+  /**
+   * Get favs from idb that have added dyring offline mode
+   */
+  static getOfflineFavsAndClearIDB() {
+    const dbPromise = DBHelper.idbPromise();
+    dbPromise.then(db => {
+      const offlineFavsStore = db.transaction('offline-fav', 'readwrite').objectStore('offline-fav');
+      offlineFavsStore.getAll().then(offlineFavs => {
+        if(offlineFavs.length != 0) {
+          DBHelper.fetchOfflineFavsToServer(offlineFavs);
+          offlineFavsStore.clear();
+          console.log('All offline favs fetched to server, storage cleared');
+          if (Notification.permission === "granted") {
+            let notification = new Notification("All data has synced to server");
+          }
+        } else {
+          console.log('No favs for sync in offline store');
+        }
+      })
+    });
+  }
+
+  static fetchOfflineFavsToServer(offlineFavs) {
+    offlineFavs.forEach(offlineFav => {
+        let is_favorite = offlineFav.is_favorite;
+        is_favorite === 'true' ? is_favorite = 'false' : is_favorite = 'true';
+        console.log({offlineFav});
+        
+        DBHelper.addToFavorites(offlineFav.restaurant_id, is_favorite);
     });
   }
 
@@ -219,17 +460,31 @@
   }
 
   /**
+   * Add to/remove restaurant from favorites
+   */
+  static addToFavorites(restaurant_id, is_favorite) {
+    is_favorite === 'true' ? is_favorite = 'false' : is_favorite = 'true';
+    fetch(`${DBHelper.DATABASE_URL}/restaurants/${restaurant_id}/?is_favorite=${is_favorite}`, {
+      method: 'PUT'
+    })
+    .then(response => response.json())
+    .catch(error => console.error(`Fetch Error =\n`, error));
+  }
+
+  /**
    * Map marker for a restaurant.
    */
   static mapMarkerForRestaurant(restaurant, map) {
-    const marker = new google.maps.Marker({
-      position: restaurant.latlng,
-      title: restaurant.name,
-      url: DBHelper.urlForRestaurant(restaurant),
-      map: map,
-      animation: google.maps.Animation.DROP}
-    );
-    return marker;
+    if (typeof google === 'object' && typeof google.maps === 'object') {
+      const marker = new google.maps.Marker({
+        position: restaurant.latlng,
+        title: restaurant.name,
+        url: DBHelper.urlForRestaurant(restaurant),
+        map: map,
+        animation: google.maps.Animation.DROP}
+      );
+      return marker;
+    }
   }
 
   static removeFocusFromMap() {

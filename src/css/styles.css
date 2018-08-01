@@ -98,6 +98,8 @@ nav h1 a {
   height: 400px;
   width: 100%;
   background-color: #ccc;
+  background-repeat: repeat;
+  cursor: pointer;
 }
 /* ====================== Restaurant Filtering ====================== */
 .filter-options {
@@ -153,6 +155,7 @@ nav h1 a {
   padding: 0 30px 25px;
   text-align: left;
   width: 270px;
+  position: relative;
 }
 #restaurants-list .restaurant-img {
   background-color: #ccc;
@@ -175,7 +178,7 @@ nav h1 a {
   margin: 0;
   font-size: 12pt;
 }
-#restaurants-list li a {
+#restaurants-list li a.button {
   background-color: #965d01;
   border-bottom: 3px solid #eee;
   color: #fff;
@@ -185,6 +188,36 @@ nav h1 a {
   padding: 8px 30px 10px;
   text-align: center;
   text-decoration: none;
+}
+
+.favorite {
+  color: orange;
+  padding: 5px 10px 2px;
+  position: absolute;
+  top: 20px;
+  right: 30px;;
+  background: #fff;
+}
+.favorite svg {
+  width: 30px;
+  height: 30px;
+}
+.favorite:hover svg {
+  color: orange;
+  fill: orange;
+}
+.favorite:focus svg {
+  color: orange;
+}
+.favorited svg {
+  fill: orange;
+}
+
+#fav {
+  background: transparent;
+  top: 120px;
+  right: 20px;
+  padding: 0;
 }
 
 /* ====================== Restaurant Details ====================== */
@@ -243,6 +276,7 @@ nav h1 a {
   text-transform: uppercase;
 }
 #restaurant-container {
+  position: relative;
   width: 100%;
   padding: 100px 5px 20px 40px;
 }
@@ -257,6 +291,11 @@ nav h1 a {
   font-weight: 300;
   letter-spacing: -1px;
   padding-bottom: 1pt;
+}
+#reviews-container h3 {
+  color: #333;
+  font-size: 16pt;
+  font-weight: 300;
 }
 #reviews-list {
   margin: 0;
@@ -275,14 +314,47 @@ nav h1 a {
 #restaurant-hours td {
   color: #666;
 }
+.review-form {
+  padding-bottom: 20px;
+  margin: 0;
+}
+.review-form input[type="text"], .review-form select, .review-form textarea {
+  display: block;
+  background-color: white;
+  border: 1px solid #fff;
+  font-size: 12pt;
+  height: 35px;
+  letter-spacing: 0;
+  margin: 10px 0;
+  padding: 5px;
+  width: 200px;
+}
+.review-form label {
+  display: block;
+  padding: 5px 0;
+}
+.review-form input[type="submit"] {
+  background-color: #965d01;
+  border-bottom: 3px solid #eee;
+  color: #fff;
+  display: inline-block;
+  font-size: 12pt;
+  margin: 15px 0 0;
+  padding: 8px 30px 10px;
+  text-align: center;
+  text-decoration: none;
+}
 
+#reviews-list li.offline-review {
+  border-color: #b35d00;
+  background-color: #f3f3f3;
+}
 /* Large desktops and laptops */
 @media (min-width: 1200px) {
   /* because of image quality */
   #restaurant-container {
     max-width: 800px;
   }
-  
 }
 
 /* Landscape tablets and medium desktops */

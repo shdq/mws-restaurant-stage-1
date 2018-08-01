@@ -13,7 +13,7 @@ Install dependencies
 ``` bash
 $ npm install
 ```
-Clone and install third-party backend server: [mws-restaurant-stage-2](https://github.com/udacity/mws-restaurant-stage-2)
+Clone, install and run third-party backend server: [mws-restaurant-stage-3](https://github.com/udacity/mws-restaurant-stage-3)
 
 When you've done that run local web server:
 ``` bash

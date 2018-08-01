@@ -6,6 +6,7 @@
   <meta name="description" content="Restaurant reviews app">
   <meta name="theme-color" content="#0e6ead"/>
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
   
   <title>Restaurant Reviews</title>
   <link rel="stylesheet" src="//normalize-css.googlecode.com/svn/trunk/normalize.css" />
@@ -16,6 +17,8 @@
   <link rel="mask-icon" href="icons/safari-pinned-tab.svg" color="#333333">
 
   <link rel="manifest" href="/manifest.json">
+
+  <link rel="prefetch" href="https://maps.googleapis.com/maps/api/js?key=AIzaSyA2lu4ATHHFARA9-2cDDdn2R_lXhM8-ybI&callback=init">
 
   <meta name="msapplication-TileColor" content="#ffffff">
   <meta name="theme-color" content="#ffffff">
@@ -31,7 +34,7 @@
 
   <main id="maincontent">
     <section role="application" id="map-container" tabindex="-1">
-      <div id="map"></div>
+      <div id="map" style="background-image: url('/img/map-pattern.jpg');" title="Click to load interactive map"></div>
     </section>
     <section>
       <div class="filter-options">
@@ -51,6 +54,5 @@
   <footer id="footer">
     Copyright (c) 2018 <a href="/">Restaurant Reviews</a> All Rights Reserved.
   </footer>
-  <script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA2lu4ATHHFARA9-2cDDdn2R_lXhM8-ybI&libraries=places&callback=initMap"></script>
 </body>
 </html>

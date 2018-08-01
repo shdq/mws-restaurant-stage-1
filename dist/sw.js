@@ -1,4 +1,4 @@
-importScripts("precache-manifest.aff61e392febb24816bf36cd50757852.js", "workbox-v3.4.1/workbox-sw.js");
+importScripts("precache-manifest.431395c6b075e1ade4cadd32344ebb6e.js", "workbox-v3.4.1/workbox-sw.js");
 workbox.setConfig({modulePathPrefix: "workbox-v3.4.1"});
 
 let appCache = 'mws-restaurant-app-';

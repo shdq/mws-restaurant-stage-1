@@ -1,3 +1,4 @@
+
 let appCache = 'mws-restaurant-app-';
 let urlsToCache = ['/'];
 self.__precacheManifest.forEach(element => {
@@ -7,9 +8,6 @@ self.__precacheManifest.forEach(element => {
 
 // Listen for install event, set callback
 self.addEventListener('install', (event) => {
-    // if there is a new service worker with updates we skipWaiting
-    //self.skipWaiting();
-    // Perform some task
     event.waitUntil(
         caches.open(appCache)
           .then(function(cache) {
@@ -73,3 +71,24 @@ self.addEventListener('activate', function(event) {
       })
     );
 });
+
+// function persistLocalChanges() {
+//     console.log('persistLocalChanges');
+//     // TODO:
+//     DBHelper.getOfflineReviewsAndClearIDB();
+//     return Promise.resolve();
+// };
+
+// background sync
+// self.addEventListener('sync', event => {
+//   if (event.tag === 'persistReviewToIDB') {
+//     event.waitUntil(persistLocalChanges()
+//       .then(() => {
+//         self.registration.showNotification("All reviews synced to server");
+//       })
+//       .catch(() => {
+//         console.log("Error syncing reviews to server");
+//       })
+//     );
+//   }
+// });
